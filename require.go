@@ -1,7 +1,7 @@
 // Gives you PHP require like functionality in Go.
 // Example:
 //
-// {{{header.tpl}}} any text here {{{footer.tpl}}}
+// {{require header.t}} any text here {{require footer.t}}
 package require
 
 import (
@@ -47,7 +47,7 @@ func splitPos(str string, p [][]int) []rep {
 
 // Inserts the files content found in the {{require }} tag into the string.
 // If a file is empty, {{require }} will be replaced with an empty string.
-func Interpret(root, s string, getFile func(string) ([]byte, error)) (string, string) {
+func Interpret(root, s string, getFile func(string, string) ([]byte, error)) (string, string) {
 	reg, _ := regexp.Compile(beg + "([a-zA-Z.:/])*" + end)
 	pos := reg.FindAllIndex([]byte(s), -1)
 	r := splitPos(s, pos)
@@ -55,7 +55,7 @@ func Interpret(root, s string, getFile func(string) ([]byte, error)) (string, st
 	for _, i := range r {
 		if i.joker {
 			fname := i.val[begl : len(i.val)-endl]
-			file, e := getFile(filepath.Join(root, fname))
+			file, e := getFile(root, fname)
 			if e == nil {
 				file_str := string(file)
 				fin += file_str
@@ -70,8 +70,8 @@ func Interpret(root, s string, getFile func(string) ([]byte, error)) (string, st
 // R loads a file and Interprets the requires in it.
 // It's a higher order function, we canp rovide our very own getFile func(string) ([]byte,error) method to it so the whole package is more reusable, for example we can implement our own
 // file caching and stuff...
-func R(root, filen string, getFile func(string) ([]byte, error)) (string, string) {
-	f, err := getFile(filepath.Join(root, filen))
+func R(root, filen string, getFile func(string, string) ([]byte, error)) (string, string) {
+	f, err := getFile(root, filen)
 	if err != nil {
 		return "", "file_can_not_be_found"
 	}
@@ -79,7 +79,11 @@ func R(root, filen string, getFile func(string) ([]byte, error)) (string, string
 	return Interpret(root, fstr, getFile)
 }
 
+func gFile(abs, fil string) ([]byte, error) {
+	return ioutil.ReadFile(filepath.Join(abs, fil))
+}
+
 // Rsimple is a simplified version of R, it uses ioutil.ReadFile to open files.
 func RSimple(root, filen string) (string, string) {
-	return R(root, filen, ioutil.ReadFile)
+	return R(root, filen, gFile)
 }
