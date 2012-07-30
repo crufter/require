@@ -46,11 +46,15 @@ func splitPos(str string, p [][]int) []rep {
 	return reps
 }
 
+func RequirePositions(s string) [][]int {
+	reg, _ := regexp.Compile(beg + "([a-zA-Z_.:/-])*" + end)
+	return reg.FindAllIndex([]byte(s), -1)
+}
+
 // Inserts the files content found in the {{require }} tag into the string.
 // If a file is empty, {{require }} will be replaced with an empty string.
 func Interpret(root, s string, getFile func(string, string) ([]byte, error)) (string, error) {
-	reg, _ := regexp.Compile(beg + "([a-zA-Z_.:/-])*" + end)
-	pos := reg.FindAllIndex([]byte(s), -1)
+	pos := RequirePositions(s)
 	r := splitPos(s, pos)
 	fin := ""
 	for _, i := range r {
