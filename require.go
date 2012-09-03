@@ -2,6 +2,7 @@
 // Example:
 //
 // {{require header.t}} any text here {{require footer.t}}
+// Avoid cyclic dependencies for now because they are not handled yet.
 package require
 
 import (
@@ -16,6 +17,10 @@ const (
 	end  string = "}}"
 	begl int    = len(beg)
 	endl int    = len(end)
+)
+
+const(
+	max_includes = 50
 )
 
 // joker bool field means that the instance is a file require
@@ -53,7 +58,11 @@ func RequirePositions(s string) [][]int {
 
 // Inserts the files content found in the {{require }} tag into the string.
 // If a file is empty, {{require }} will be replaced with an empty string.
-func Interpret(root, s string, getFile func(string, string) ([]byte, error)) (string, error) {
+func interpret(root, s string, getFile func(string, string) ([]byte, error), counter int) (string, error) {
+	if counter >= max_includes {
+		return "", fmt.Errorf("Max includes exceeded.")
+	}
+	counter++
 	pos := RequirePositions(s)
 	r := splitPos(s, pos)
 	fin := ""
@@ -61,10 +70,12 @@ func Interpret(root, s string, getFile func(string, string) ([]byte, error)) (st
 		if i.joker {
 			fname := i.val[begl : len(i.val)-endl]
 			file, e := getFile(root, fname)
-			if e == nil {
-				file_str := string(file)
-				fin += file_str
-			}
+			if e != nil { continue }
+			file_str := string(file)
+			
+			interpreted_f, err := interpret(root, file_str, getFile, counter)
+			if err != nil { continue }
+			fin += interpreted_f
 		} else {
 			fin += i.val
 		}
@@ -81,7 +92,7 @@ func R(root, filen string, getFile func(string, string) ([]byte, error)) (string
 		return "", fmt.Errorf("file_can_not_be_found")
 	}
 	fstr := string(f)
-	return Interpret(root, fstr, getFile)
+	return interpret(root, fstr, getFile, 0)
 }
 
 func gFile(abs, fil string) ([]byte, error) {
