@@ -72,7 +72,6 @@ func interpret(root, s string, getFile func(string, string) ([]byte, error), cou
 			file, e := getFile(root, fname)
 			if e != nil { continue }
 			file_str := string(file)
-			
 			interpreted_f, err := interpret(root, file_str, getFile, counter)
 			if err != nil { continue }
 			fin += interpreted_f
@@ -92,6 +91,16 @@ func R(root, filen string, getFile func(string, string) ([]byte, error)) (string
 		return "", fmt.Errorf("file_can_not_be_found")
 	}
 	fstr := string(f)
+	return interpret(root, fstr, getFile, 0)
+}
+
+func RMemSimple(root string, file []byte) (string, error) {
+	fstr := string(file)
+	return interpret(root, fstr, gFile, 0)
+}
+
+func RMem(root string, file []byte, getFile func(string, string) ([]byte, error)) (string, error) {
+	fstr := string(file)
 	return interpret(root, fstr, getFile, 0)
 }
 
