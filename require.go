@@ -6,10 +6,10 @@
 package require
 
 import (
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"regexp"
-	"fmt"
 )
 
 const (
@@ -19,7 +19,7 @@ const (
 	endl int    = len(end)
 )
 
-const(
+const (
 	max_includes = 50
 )
 
@@ -70,10 +70,14 @@ func interpret(root, s string, getFile func(string, string) ([]byte, error), cou
 		if i.joker {
 			fname := i.val[begl : len(i.val)-endl]
 			file, e := getFile(root, fname)
-			if e != nil { continue }
+			if e != nil {
+				continue
+			}
 			file_str := string(file)
 			interpreted_f, err := interpret(root, file_str, getFile, counter)
-			if err != nil { continue }
+			if err != nil {
+				continue
+			}
 			fin += interpreted_f
 		} else {
 			fin += i.val
